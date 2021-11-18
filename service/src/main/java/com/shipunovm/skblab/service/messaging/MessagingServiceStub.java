@@ -14,6 +14,10 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class MessagingServiceStub implements MessagingService {
 
+    //these fields must be used with sync if we want to avoid data races, but for performance kept them volatile only
+    private volatile MessageId lastSentMessageCorrelationId;
+    private volatile Message<?> lastReceivedMessage;
+
     @SneakyThrows
     private static void sleep() {
         Thread.sleep(TimeUnit.SECONDS.toMillis(10));
@@ -30,7 +34,9 @@ public class MessagingServiceStub implements MessagingService {
     @Override
     public <T> MessageId send(Message<T> msg) {
         log.info("message is sent to external system");
-        return new MessageId(UUID.randomUUID());
+        final MessageId messageId = new MessageId(UUID.randomUUID());
+        lastSentMessageCorrelationId = messageId;
+        return messageId;
     }
 
     @Override
@@ -43,12 +49,24 @@ public class MessagingServiceStub implements MessagingService {
             sleep();
         }
         log.info("message received from external system");
-        return (Message<T>) new ReceivedMessage("message from external system");
+        final Message<T> externalMsg = (Message<T>) new ReceivedMessage("message from external system");
+        lastReceivedMessage = externalMsg;
+        return externalMsg;
     }
 
     @Override
     public <R, A> Message<A> doRequest(Message<R> request) throws TimeoutException {
         return receive(send(request));
+    }
+
+    @Override
+    public Message<?> getLastReceivedMessage() {
+        return lastReceivedMessage;
+    }
+
+    @Override
+    public MessageId getLastSentMessageCorrelationId() {
+        return lastSentMessageCorrelationId;
     }
 
 }

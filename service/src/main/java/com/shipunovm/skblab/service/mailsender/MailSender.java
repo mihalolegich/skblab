@@ -11,4 +11,6 @@ public interface MailSender {
 
     void sendMail(EmailAddress toAddress, EmailContent messageBody) throws TimeoutException;
 
+    String getLastSentEmailAddress();
+
 }

@@ -35,4 +35,8 @@ public interface MessagingService {
      */
     <R, A> Message<A> doRequest(Message<R> request) throws TimeoutException;
 
+    <T> Message<T> getLastReceivedMessage();
+
+    MessageId getLastSentMessageCorrelationId();
+
 }
